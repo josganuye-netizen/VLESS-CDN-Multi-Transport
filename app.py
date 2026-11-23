@@ -27,18 +27,31 @@ class Handler(BaseHTTPRequestHandler):
         for c in clients:
             uid = c["id"]
             name = c.get("email", "user")
-            l_xhttp = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP"
-            l_httpup = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp"
-            l_ws = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS"
+            # TLS (443)
+            l_xhttp_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP-443"
+            l_httpup_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp-443"
+            l_ws_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS-443"
+            # Non-TLS (80)
+            l_xhttp_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP-80"
+            l_httpup_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp-80"
+            l_ws_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS-80"
+
             rows += f"""
             <div class="card">
               <div class="top"><b>{name}</b><form method="POST" action="/delete" style="margin:0">
               <input type="hidden" name="id" value="{uid}"><button class="del">Hapus</button></form></div>
               <small>{uid}</small>
+              <div class="lbl">TLS (Port 443)</div>
               <div class="btns">
-                <button onclick="copy('{l_xhttp}')">Copy XHTTP</button>
-                <button onclick="copy('{l_httpup}')">Copy HTTPUp</button>
-                <button onclick="copy('{l_ws}')">Copy WS</button>
+                <button onclick="copy('{l_xhttp_tls}')">XHTTP 443</button>
+                <button onclick="copy('{l_httpup_tls}')">HTTPUp 443</button>
+                <button onclick="copy('{l_ws_tls}')">WS 443</button>
+              </div>
+              <div class="lbl">Non-TLS (Port 80)</div>
+              <div class="btns ntls">
+                <button onclick="copy('{l_xhttp_80}')">XHTTP 80</button>
+                <button onclick="copy('{l_httpup_80}')">HTTPUp 80</button>
+                <button onclick="copy('{l_ws_80}')">WS 80</button>
               </div>
             </div>"""
 
@@ -50,7 +63,9 @@ class Handler(BaseHTTPRequestHandler):
         .card{{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}}
         .top{{display:flex;justify-content:space-between;align-items:center}}
         small{{color:#94a3b8;word-break:break-all;display:block;margin:6px 0}}
+        .lbl{{font-size:11px;color:#cbd5e1;margin:8px 0 4px}}
         .btns{{display:flex;gap:6px}}.btns button{{flex:1;padding:8px;border:none;border-radius:6px;background:#3b82f6;color:#fff;font-size:12px}}
+        .ntls button{{background:#0ea5e9}}
         .del{{background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:12px}}</style></head>
         <body><h3>Xray Simple UI ({DOMAIN})</h3>
         <div class="box"><form method="POST" action="/add">
