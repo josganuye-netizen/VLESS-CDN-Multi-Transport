@@ -3,48 +3,62 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs
 
 CONFIG_PATH = "/app/config.json"
-DOMAIN = os.environ.get("DOMAIN", "wokcandy.joss.cc.cd")
+USERS_PATH = "/app/users.json"
 
-def load_clients():
+def load_users():
+    if os.path.exists(USERS_PATH):
+        with open(USERS_PATH, "r") as f:
+            return json.load(f)
     with open(CONFIG_PATH, "r") as f:
         data = json.load(f)
-    return data["inbounds"][0]["settings"]["clients"]
+    users = []
+    for c in data["inbounds"][0]["settings"]["clients"]:
+        users.append({
+            "id": c["id"],
+            "name": c.get("email", "user"),
+            "domain": "domain-kamu.com"
+        })
+    save_users(users)
+    return users
 
-def save_and_reload(clients):
+def save_users(users):
+    with open(USERS_PATH, "w") as f:
+        json.dump(users, f, indent=2)
     with open(CONFIG_PATH, "r") as f:
         data = json.load(f)
+    clean_clients = [{"id": u["id"], "email": u["name"]} for u in users]
     for ib in data["inbounds"]:
-        ib["settings"]["clients"] = clients
+        ib["settings"]["clients"] = clean_clients
     with open(CONFIG_PATH, "w") as f:
         json.dump(data, f, indent=2)
     subprocess.run(["pkill", "-x", "xray"])
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        clients = load_clients()
+        users = load_users()
         rows = ""
-        for c in clients:
-            uid = c["id"]
-            name = c.get("email", "user")
-            l_xhttp_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP-443"
-            l_httpup_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp-443"
-            l_ws_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS-443"
-            l_xhttp_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP-80"
-            l_httpup_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp-80"
-            l_ws_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS-80"
+        for u in reversed(users):
+            uid = u["id"]
+            name = u["name"]
+            dom = u["domain"]
+            l_xhttp_tls = f"vless://{uid}@{dom}:443?encryption=none&security=tls&sni={dom}&type=xhttp&host={dom}&path=%2Fxhttp&mode=auto#{name}-XHTTP-443"
+            l_httpup_tls = f"vless://{uid}@{dom}:443?encryption=none&security=tls&sni={dom}&type=httpupgrade&host={dom}&path=%2Fhttpup#{name}-HTTPUp-443"
+            l_ws_tls = f"vless://{uid}@{dom}:443?encryption=none&security=tls&sni={dom}&type=ws&host={dom}&path=%2Fvless#{name}-WS-443"
+            l_xhttp_80 = f"vless://{uid}@{dom}:80?encryption=none&security=none&type=xhttp&host={dom}&path=%2Fxhttp&mode=auto#{name}-XHTTP-80"
+            l_httpup_80 = f"vless://{uid}@{dom}:80?encryption=none&security=none&type=httpupgrade&host={dom}&path=%2Fhttpup#{name}-HTTPUp-80"
+            l_ws_80 = f"vless://{uid}@{dom}:80?encryption=none&security=none&type=ws&host={dom}&path=%2Fvless#{name}-WS-80"
 
             rows += f"""
             <div class="card">
-              <div class="top"><b>{name}</b><form method="POST" action="/delete" style="margin:0">
-              <input type="hidden" name="id" value="{uid}"><button class="del">Hapus</button></form></div>
+              <div class="top"><b>{name}</b><span class="tag">{dom}</span></div>
               <small>{uid}</small>
-              <div class="lbl">TLS (Port 443)</div>
+              <div class="lbl">TLS Port 443</div>
               <div class="btns">
                 <button onclick="copy('{l_xhttp_tls}')">XHTTP 443</button>
                 <button onclick="copy('{l_httpup_tls}')">HTTPUp 443</button>
                 <button onclick="copy('{l_ws_tls}')">WS 443</button>
               </div>
-              <div class="lbl">Non-TLS (Port 80)</div>
+              <div class="lbl">Non-TLS Port 80</div>
               <div class="btns ntls">
                 <button onclick="copy('{l_xhttp_80}')">XHTTP 80</button>
                 <button onclick="copy('{l_httpup_80}')">HTTPUp 80</button>
@@ -53,23 +67,33 @@ class Handler(BaseHTTPRequestHandler):
             </div>"""
 
         html = f"""<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>VLESS Generator</title>
         <style>body{{background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:16px;max-width:540px;margin:auto}}
         .box{{background:#1e293b;padding:16px;border-radius:12px;margin-bottom:16px}}
-        input{{width:68%;padding:10px;border-radius:8px;border:none}}
-        .add{{width:29%;padding:10px;border-radius:8px;border:none;background:#22c55e;color:#fff;font-weight:bold}}
+        input{{width:100%;padding:11px;border-radius:8px;border:none;margin-bottom:10px;box-sizing:border-box}}
+        .add{{width:100%;padding:11px;border-radius:8px;border:none;background:#22c55e;color:#fff;font-weight:bold;font-size:14px}}
         .card{{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}}
-        .top{{display:flex;justify-content:space-between;align-items:center}}
+        .top{{display:flex;justify-content:space-between;align-items:center;gap:8px}}
+        .tag{{background:#334155;color:#38bdf8;font-size:11px;padding:3px 8px;border-radius:6px;word-break:break-all}}
         small{{color:#94a3b8;word-break:break-all;display:block;margin:6px 0}}
         .lbl{{font-size:11px;color:#cbd5e1;margin:8px 0 4px}}
         .btns{{display:flex;gap:6px}}.btns button{{flex:1;padding:8px;border:none;border-radius:6px;background:#3b82f6;color:#fff;font-size:12px}}
-        .ntls button{{background:#0ea5e9}}
-        .del{{background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:12px}}</style></head>
-        <body><h3>Xray Simple UI ({DOMAIN})</h3>
+        .ntls button{{background:#0ea5e9}}</style></head>
+        <body><h3>VLESS Account Generator</h3>
         <div class="box"><form method="POST" action="/add">
-        <input type="text" name="name" placeholder="Nama akun (misal: hp1)" required>
-        <button class="add" type="submit">+ Buat</button></form></div>
+        <input type="text" name="name" maxlength="20" placeholder="Nama akun (misal: user1)" required>
+        <input type="text" name="domain" maxlength="60" placeholder="Domain kamu (misal: sub.domain.com)" required>
+        <button class="add" type="submit">+ Buat Akun</button></form></div>
         {rows}
-        <script>function copy(t){{navigator.clipboard.writeText(t);alert('Link berhasil disalin!');}}</script>
+        <script>
+        function copy(t){{
+          if(navigator.clipboard){{navigator.clipboard.writeText(t).then(()=>alert('Link berhasil disalin!')).catch(()=>fallback(t));}}
+          else{{fallback(t);}}
+        }}
+        function fallback(t){{
+          var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);alert('Link berhasil disalin!');
+        }}
+        </script>
         </body></html>"""
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -79,15 +103,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body = parse_qs(self.rfile.read(length).decode())
-        clients = load_clients()
+        users = load_users()
         if self.path == "/add":
-            name = body.get("name", ["user"])[0].strip() or "user"
-            clients.append({"id": str(uuid.uuid4()), "email": name})
-            save_and_reload(clients)
-        elif self.path == "/delete":
-            uid = body.get("id", [""])[0]
-            clients = [c for c in clients if c["id"] != uid]
-            save_and_reload(clients)
+            name = "".join(c for c in body.get("name", ["user"])[0] if c.isalnum() or c in "-_")[:20] or "user"
+            raw_dom = body.get("domain", [""])[0].strip().lower()
+            raw_dom = raw_dom.replace("https://", "").replace("http://", "").split("/")[0]
+            dom = "".join(c for c in raw_dom if c.isalnum() or c in ".-")[:60] or "domain-kamu.com"
+            users.append({"id": str(uuid.uuid4()), "name": name, "domain": dom})
+            save_users(users)
         self.send_response(302)
         self.send_header("Location", "/")
         self.end_headers()
