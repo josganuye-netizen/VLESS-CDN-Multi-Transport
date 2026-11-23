@@ -6,7 +6,9 @@
       "port": 8080,
       "protocol": "vless",
       "settings": {
-        "clients": [{ "id": "b61ccee6-5850-499a-8b0a-1509d2d11202" }],
+        "clients": [
+          { "id": "b61ccee6-5850-499a-8b0a-1509d2d11202", "email": "default" }
+        ],
         "decryption": "none"
       },
       "streamSettings": {
@@ -21,7 +23,9 @@
       "port": 8081,
       "protocol": "vless",
       "settings": {
-        "clients": [{ "id": "b61ccee6-5850-499a-8b0a-1509d2d11202" }],
+        "clients": [
+          { "id": "b61ccee6-5850-499a-8b0a-1509d2d11202", "email": "default" }
+        ],
         "decryption": "none"
       },
       "streamSettings": {
@@ -36,7 +40,9 @@
       "port": 8082,
       "protocol": "vless",
       "settings": {
-        "clients": [{ "id": "b61ccee6-5850-499a-8b0a-1509d2d11202" }],
+        "clients": [
+          { "id": "b61ccee6-5850-499a-8b0a-1509d2d11202", "email": "default" }
+        ],
         "decryption": "none"
       },
       "streamSettings": {
