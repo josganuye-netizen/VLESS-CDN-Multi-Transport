@@ -16,4 +16,4 @@ WORKDIR /app
 COPY config.json /app/config.json
 COPY app.py /app/app.py
 
-CMD ["sh", "-c", "xray run -c /app/config.json & python3 /app/app.py & if [ -n \"$CF_TOKEN\" ]; then cloudflared tunnel --no-autoupdate run --token \"$CF_TOKEN\"; else tail -f /dev/null; fi"]
+CMD ["sh", "-c", "(while true; do xray run -c /app/config.json; sleep 0.2; done) & python3 /app/app.py & if [ -n \"$CF_TOKEN\" ]; then cloudflared tunnel --no-autoupdate run --token \"$CF_TOKEN\"; else tail -f /dev/null; fi"]

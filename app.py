@@ -3,7 +3,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs
 
 CONFIG_PATH = "/app/config.json"
-DOMAIN = os.environ.get("DOMAIN", "wokcandy.vall.cc.cd")
+DOMAIN = os.environ.get("DOMAIN", "wokcandy.joss.cc.cd")
 
 def load_clients():
     with open(CONFIG_PATH, "r") as f:
@@ -17,8 +17,7 @@ def save_and_reload(clients):
         ib["settings"]["clients"] = clients
     with open(CONFIG_PATH, "w") as f:
         json.dump(data, f, indent=2)
-    subprocess.run(["pkill", "xray"])
-    subprocess.Popen(["xray", "run", "-c", CONFIG_PATH])
+    subprocess.run(["pkill", "-x", "xray"])
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -27,11 +26,9 @@ class Handler(BaseHTTPRequestHandler):
         for c in clients:
             uid = c["id"]
             name = c.get("email", "user")
-            # TLS (443)
             l_xhttp_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP-443"
             l_httpup_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp-443"
             l_ws_tls = f"vless://{uid}@{DOMAIN}:443?encryption=none&security=tls&sni={DOMAIN}&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS-443"
-            # Non-TLS (80)
             l_xhttp_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=xhttp&host={DOMAIN}&path=%2Fxhttp&mode=auto#{name}-XHTTP-80"
             l_httpup_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=httpupgrade&host={DOMAIN}&path=%2Fhttpup#{name}-HTTPUp-80"
             l_ws_80 = f"vless://{uid}@{DOMAIN}:80?encryption=none&security=none&type=ws&host={DOMAIN}&path=%2Fvless#{name}-WS-80"
