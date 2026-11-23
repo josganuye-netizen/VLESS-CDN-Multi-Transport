@@ -1,0 +1,31 @@
+name: Build Pingora L7 ARM64
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake pkg-config libssl-dev clang
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build Release Binary
+        run: |
+          cargo build --release
+          strip target/release/xray-pingora-l7
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: Pingora L7 ARM64
+          files: target/release/xray-pingora-l7
