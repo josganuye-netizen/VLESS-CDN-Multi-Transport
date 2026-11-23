@@ -1,37 +1,51 @@
 {
+  "log": { "loglevel": "warning" },
   "inbounds": [
     {
-      "port": 10000,
-      "listen": "127.0.0.1",
+      "listen": "0.0.0.0",
+      "port": 8080,
       "protocol": "vless",
       "settings": {
-        "clients": [
-          {
-            "id": "b61ccee6-5850-499a-8b0a-1509d2d11202"
-          }
-        ],
+        "clients": [{ "id": "b61ccee6-5850-499a-8b0a-1509d2d11202" }],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "none",
+        "xhttpSettings": { "path": "/xhttp", "mode": "auto" }
+      },
+      "tag": "vless-xhttp"
+    },
+    {
+      "listen": "0.0.0.0",
+      "port": 8081,
+      "protocol": "vless",
+      "settings": {
+        "clients": [{ "id": "b61ccee6-5850-499a-8b0a-1509d2d11202" }],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": { "path": "/httpup" }
+      },
+      "tag": "vless-httpupgrade"
+    },
+    {
+      "listen": "0.0.0.0",
+      "port": 8082,
+      "protocol": "vless",
+      "settings": {
+        "clients": [{ "id": "b61ccee6-5850-499a-8b0a-1509d2d11202" }],
         "decryption": "none"
       },
       "streamSettings": {
         "network": "ws",
-        "wsSettings": {
-          "path": "/vless"
-        }
-      }
+        "security": "none",
+        "wsSettings": { "path": "/vless" }
+      },
+      "tag": "vless-ws"
     }
   ],
-  "outbounds": [
-    {
-      "protocol": "freedom",
-      "settings": {
-        "domainStrategy": "UseIPv4"
-      },
-      "streamSettings": {
-        "sockopt": {
-          "tcpNoDelay": true,
-          "tcpKeepAliveInterval": 30
-        }
-      }
-    }
-  ]
+  "outbounds": [{ "protocol": "freedom", "tag": "direct" }]
 }
