@@ -1,14 +1,12 @@
-# Stage 1: Build Pingora L7 Proxy (Linux x86_64)
 FROM rust:latest AS builder
-RUN apt-get update && apt-get install -y cmake pkg-config libssl-dev g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y cmake pkg-config clang libclang-dev g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /usr/src/app
 COPY Cargo.toml ./
 COPY src ./src
 RUN cargo build --release
 
-# Stage 2: Runtime Container (Pingora L7 + Xray + Cloudflared)
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y curl unzip ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY --from=builder /usr/src/app/target/release/xray-pingora-l7 /app/xray-pingora-l7

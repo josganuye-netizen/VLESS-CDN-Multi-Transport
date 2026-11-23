@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use pingora::prelude::*;
-use std::sync::Arc;
 
 pub struct L7Proxy;
 
@@ -14,7 +13,6 @@ impl ProxyHttp for L7Proxy {
         _session: &mut Session,
         _ctx: &mut Self::CTX,
     ) -> Result<Box<HttpPeer>> {
-        // Meneruskan trafik L7 yang sudah dinormalisasi ke Xray-core lokal
         let peer = Box::new(HttpPeer::new(("127.0.0.1", 10000), false, String::new()));
         Ok(peer)
     }
@@ -25,8 +23,7 @@ impl ProxyHttp for L7Proxy {
         upstream_request: &mut RequestHeader,
         _ctx: &mut Self::CTX,
     ) -> Result<()> {
-        // Normalisasi header Host & pastikan upgrade WebSocket diteruskan ke Xray
-        upstream_request.insert_header("Host", "127.0.0.1:10000").unwrap();
+        upstream_request.insert_header("Host", "127.0.0.1:10000")?;
         Ok(())
     }
 }
