@@ -1,5 +1,5 @@
 # Stage 1: Build Pingora L7 Proxy (Linux x86_64)
-FROM rust:1.83-bookworm AS builder
+FROM rust:latest AS builder
 RUN apt-get update && apt-get install -y cmake pkg-config libssl-dev g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /usr/src/app
 COPY Cargo.toml ./
