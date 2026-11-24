@@ -5,10 +5,7 @@
       "listen": "0.0.0.0",
       "port": 8080,
       "protocol": "vless",
-      "settings": {
-        "clients": [],
-        "decryption": "none"
-      },
+      "settings": { "clients": [], "decryption": "none" },
       "streamSettings": {
         "network": "xhttp",
         "security": "none",
@@ -20,10 +17,7 @@
       "listen": "0.0.0.0",
       "port": 8081,
       "protocol": "vless",
-      "settings": {
-        "clients": [],
-        "decryption": "none"
-      },
+      "settings": { "clients": [], "decryption": "none" },
       "streamSettings": {
         "network": "httpupgrade",
         "security": "none",
@@ -35,10 +29,7 @@
       "listen": "0.0.0.0",
       "port": 8082,
       "protocol": "vless",
-      "settings": {
-        "clients": [],
-        "decryption": "none"
-      },
+      "settings": { "clients": [], "decryption": "none" },
       "streamSettings": {
         "network": "ws",
         "security": "none",
