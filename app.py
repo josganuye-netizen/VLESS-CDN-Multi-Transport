@@ -1,6 +1,7 @@
 import json, os, subprocess, uuid
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, quote, unquote
 
 CONFIG_PATH = "/app/config.json"
 USERS_PATH = "/app/users.json"
@@ -8,7 +9,11 @@ USERS_PATH = "/app/users.json"
 def load_users():
     if os.path.exists(USERS_PATH):
         with open(USERS_PATH, "r") as f:
-            return json.load(f)
+            users = json.load(f)
+        cleaned = [u for u in users if u.get("domain") != "domain-kamu.com" and u.get("id") != "b61ccee6-5850-499a-8b0a-1509d2d11202"]
+        if len(cleaned) != len(users):
+            save_users(cleaned)
+        return cleaned
     return []
 
 def save_users(users):
@@ -24,8 +29,18 @@ def save_users(users):
     subprocess.run(["pkill", "-x", "xray"])
 
 class Handler(BaseHTTPRequestHandler):
+    def get_saved_domain(self):
+        cookie_header = self.headers.get("Cookie", "")
+        if cookie_header:
+            c = SimpleCookie()
+            c.load(cookie_header)
+            if "user_domain" in c:
+                return unquote(c["user_domain"].value)
+        return ""
+
     def do_GET(self):
         users = load_users()
+        saved_dom = self.get_saved_domain()
         rows = ""
         for u in reversed(users):
             uid = u["id"]
@@ -76,14 +91,17 @@ class Handler(BaseHTTPRequestHandler):
         <body><h3>Generator Akun VLESS</h3>
         <div class="box"><form method="POST" action="/add" onsubmit="saveDom()">
         <input type="text" name="name" maxlength="20" placeholder="Nama akun (misal: user1)" required>
-        <input type="text" id="domInput" name="domain" maxlength="60" placeholder="Domain kamu (misal: sub.domain.com)" required>
+        <input type="text" id="domInput" name="domain" maxlength="60" value="{saved_dom}" placeholder="Domain kamu (misal: sub.domain.com)" required>
         <button class="add" type="submit">+ Buat Akun</button></form></div>
         {rows}
         <script>
-        window.onload=function(){{
-          var saved=localStorage.getItem('vless_user_domain');
-          if(saved){{document.getElementById('domInput').value=saved;}}
-        }};
+        (function(){{
+          var el=document.getElementById('domInput');
+          if(!el.value){{
+            var saved=localStorage.getItem('vless_user_domain');
+            if(saved){{el.value=saved;}}
+          }}
+        }})();
         function saveDom(){{
           var val=document.getElementById('domInput').value.trim();
           if(val){{localStorage.setItem('vless_user_domain',val);}}
@@ -106,6 +124,7 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = parse_qs(self.rfile.read(length).decode())
         users = load_users()
+        dom = ""
         if self.path == "/add":
             name = "".join(c for c in body.get("name", ["user"])[0] if c.isalnum() or c in "-_")[:20] or "user"
             raw_dom = body.get("domain", [""])[0].strip().lower()
@@ -115,6 +134,8 @@ class Handler(BaseHTTPRequestHandler):
                 users.append({"id": str(uuid.uuid4()), "name": name, "domain": dom})
                 save_users(users)
         self.send_response(302)
+        if dom:
+            self.send_header("Set-Cookie", f"user_domain={quote(dom)}; Path=/; Max-Age=31536000")
         self.send_header("Location", "/")
         self.end_headers()
 
