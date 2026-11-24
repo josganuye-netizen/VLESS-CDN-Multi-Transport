@@ -5,6 +5,7 @@ from urllib.parse import parse_qs, quote, unquote
 
 CONFIG_PATH = "/app/config.json"
 USERS_PATH = "/app/users.json"
+ENV_DOMAIN = os.environ.get("DOMAIN", "").strip()
 
 def load_users():
     if os.path.exists(USERS_PATH):
@@ -35,8 +36,10 @@ class Handler(BaseHTTPRequestHandler):
             c = SimpleCookie()
             c.load(cookie_header)
             if "user_domain" in c:
-                return unquote(c["user_domain"].value)
-        return ""
+                val = unquote(c["user_domain"].value).strip()
+                if val:
+                    return val
+        return ENV_DOMAIN
 
     def do_GET(self):
         users = load_users()
@@ -91,7 +94,7 @@ class Handler(BaseHTTPRequestHandler):
         <body><h3>Generator Akun VLESS</h3>
         <div class="box"><form method="POST" action="/add" onsubmit="saveDom()">
         <input type="text" name="name" maxlength="20" placeholder="Nama akun (misal: user1)" required>
-        <input type="text" id="domInput" name="domain" maxlength="60" value="{saved_dom}" placeholder="Domain kamu (misal: sub.domain.com)" required>
+        <input type="text" id="domInput" name="domain" maxlength="60" value="{saved_dom}" placeholder="Domain Zero Trust (misal: sub.domain.com)" required>
         <button class="add" type="submit">+ Buat Akun</button></form></div>
         {rows}
         <script>
