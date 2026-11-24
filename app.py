@@ -9,17 +9,7 @@ def load_users():
     if os.path.exists(USERS_PATH):
         with open(USERS_PATH, "r") as f:
             return json.load(f)
-    with open(CONFIG_PATH, "r") as f:
-        data = json.load(f)
-    users = []
-    for c in data["inbounds"][0]["settings"]["clients"]:
-        users.append({
-            "id": c["id"],
-            "name": c.get("email", "user"),
-            "domain": "domain-kamu.com"
-        })
-    save_users(users)
-    return users
+    return []
 
 def save_users(users):
     with open(USERS_PATH, "w") as f:
@@ -52,13 +42,13 @@ class Handler(BaseHTTPRequestHandler):
             <div class="card">
               <div class="top"><b>{name}</b><span class="tag">{dom}</span></div>
               <small>{uid}</small>
-              <div class="lbl">TLS Port 443</div>
+              <div class="lbl">Port TLS 443</div>
               <div class="btns">
                 <button onclick="copy('{l_xhttp_tls}')">XHTTP 443</button>
                 <button onclick="copy('{l_httpup_tls}')">HTTPUp 443</button>
                 <button onclick="copy('{l_ws_tls}')">WS 443</button>
               </div>
-              <div class="lbl">Non-TLS Port 80</div>
+              <div class="lbl">Port Non-TLS 80</div>
               <div class="btns ntls">
                 <button onclick="copy('{l_xhttp_80}')">XHTTP 80</button>
                 <button onclick="copy('{l_httpup_80}')">HTTPUp 80</button>
@@ -66,26 +56,38 @@ class Handler(BaseHTTPRequestHandler):
               </div>
             </div>"""
 
+        if not rows:
+            rows = '<div class="empty">Belum ada akun terdaftar. Silakan buat akun di atas.</div>'
+
         html = f"""<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>VLESS Generator</title>
+        <title>Generator Akun VLESS</title>
         <style>body{{background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:16px;max-width:540px;margin:auto}}
         .box{{background:#1e293b;padding:16px;border-radius:12px;margin-bottom:16px}}
         input{{width:100%;padding:11px;border-radius:8px;border:none;margin-bottom:10px;box-sizing:border-box}}
         .add{{width:100%;padding:11px;border-radius:8px;border:none;background:#22c55e;color:#fff;font-weight:bold;font-size:14px}}
         .card{{background:#1e293b;padding:14px;border-radius:12px;margin-bottom:10px}}
+        .empty{{text-align:center;color:#94a3b8;padding:20px;font-size:13px}}
         .top{{display:flex;justify-content:space-between;align-items:center;gap:8px}}
         .tag{{background:#334155;color:#38bdf8;font-size:11px;padding:3px 8px;border-radius:6px;word-break:break-all}}
         small{{color:#94a3b8;word-break:break-all;display:block;margin:6px 0}}
         .lbl{{font-size:11px;color:#cbd5e1;margin:8px 0 4px}}
         .btns{{display:flex;gap:6px}}.btns button{{flex:1;padding:8px;border:none;border-radius:6px;background:#3b82f6;color:#fff;font-size:12px}}
         .ntls button{{background:#0ea5e9}}</style></head>
-        <body><h3>VLESS Account Generator</h3>
-        <div class="box"><form method="POST" action="/add">
+        <body><h3>Generator Akun VLESS</h3>
+        <div class="box"><form method="POST" action="/add" onsubmit="saveDom()">
         <input type="text" name="name" maxlength="20" placeholder="Nama akun (misal: user1)" required>
-        <input type="text" name="domain" maxlength="60" placeholder="Domain kamu (misal: sub.domain.com)" required>
+        <input type="text" id="domInput" name="domain" maxlength="60" placeholder="Domain kamu (misal: sub.domain.com)" required>
         <button class="add" type="submit">+ Buat Akun</button></form></div>
         {rows}
         <script>
+        window.onload=function(){{
+          var saved=localStorage.getItem('vless_user_domain');
+          if(saved){{document.getElementById('domInput').value=saved;}}
+        }};
+        function saveDom(){{
+          var val=document.getElementById('domInput').value.trim();
+          if(val){{localStorage.setItem('vless_user_domain',val);}}
+        }}
         function copy(t){{
           if(navigator.clipboard){{navigator.clipboard.writeText(t).then(()=>alert('Link berhasil disalin!')).catch(()=>fallback(t));}}
           else{{fallback(t);}}
@@ -108,9 +110,10 @@ class Handler(BaseHTTPRequestHandler):
             name = "".join(c for c in body.get("name", ["user"])[0] if c.isalnum() or c in "-_")[:20] or "user"
             raw_dom = body.get("domain", [""])[0].strip().lower()
             raw_dom = raw_dom.replace("https://", "").replace("http://", "").split("/")[0]
-            dom = "".join(c for c in raw_dom if c.isalnum() or c in ".-")[:60] or "domain-kamu.com"
-            users.append({"id": str(uuid.uuid4()), "name": name, "domain": dom})
-            save_users(users)
+            dom = "".join(c for c in raw_dom if c.isalnum() or c in ".-")[:60]
+            if dom:
+                users.append({"id": str(uuid.uuid4()), "name": name, "domain": dom})
+                save_users(users)
         self.send_response(302)
         self.send_header("Location", "/")
         self.end_headers()
